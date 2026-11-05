@@ -1,5 +1,5 @@
 /* Offline app shell. Bump CACHE whenever an asset below changes. */
-var CACHE = 'bts-v2.2.0';
+var CACHE = 'bts-v2.2.1';
 var ASSETS = [
   './',
   'index.html',
@@ -16,9 +16,14 @@ var ASSETS = [
 ];
 
 self.addEventListener('install', function (e) {
+  // {cache:'reload'} is the point here: a plain addAll() is allowed to take
+  // responses from the browser's HTTP cache, and GitHub Pages serves these
+  // with max-age=600. Without it a install minutes after a deploy can store a
+  // mix of new and stale files.
+  var fresh = ASSETS.map(function (url) { return new Request(url, { cache: 'reload' }); });
   e.waitUntil(
     caches.open(CACHE)
-      .then(function (c) { return c.addAll(ASSETS); })
+      .then(function (c) { return c.addAll(fresh); })
       .then(function () { return self.skipWaiting(); })
   );
 });
