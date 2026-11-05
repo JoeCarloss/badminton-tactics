@@ -7,8 +7,9 @@
   var canvas, ctx, stage, view, tool = 'move', active = null, dirty = false;
   var anim = null;   // { t0, total }
 
-  // How far a marker may stray outside the lines.
-  var OUT = 0.6;
+  // How far a marker may stray outside the lines. Kept a disc-radius inside
+  // the run-off so a dragged player clips exactly as much as it used to.
+  var OUT = 0.45;
   var LIM = {
     x0: -OUT, x1: COURT.widthDoubles + OUT,
     ourY0: COURT.netY + 0.30, ourY1: COURT.length + OUT,
@@ -20,8 +21,9 @@
      so the court is always at its maximum size for the screen. Which edge the
      panel ends up on falls out of the arithmetic rather than being hard-coded. */
 
-  var PANEL_MIN_W = 188;   // narrowest usable single column
-  var PANEL_MIN_H = 128;   // shortest usable two-row band
+  var PANEL_MIN_W = 188;   // narrowest usable column
+  var PANEL_MIN_H = 128;   // shortest usable band
+  var PANEL_MAX_FRAC = 0.45;
   var GAP = 6;
   var STAGE_PAD = 10;      // .stage padding, both sides
 
@@ -29,6 +31,25 @@
 
   function fitCourt(w, h, dpr) {
     return BTS.createView().fitTo(Math.max(40, w - STAGE_PAD), Math.max(40, h - STAGE_PAD), dpr);
+  }
+
+  /* How tall the panel's content really is at a given width and arrangement.
+     Measured off-flow, because assuming a minimum fits is exactly what broke
+     on phones. */
+  function panelNeeds(mode, width) {
+    var prevLayout = app.dataset.layout;
+    var prevStyle = panel.getAttribute('style');
+    var wasHidden = panel.hidden;
+    panel.hidden = false;
+    app.dataset.layout = mode;
+    panel.style.cssText = 'position:absolute;left:-10000px;top:0;visibility:hidden;' +
+      'width:' + Math.max(80, width) + 'px;height:auto;max-height:none;overflow:visible;';
+    var h = panel.scrollHeight;
+    if (prevStyle === null) panel.removeAttribute('style');
+    else panel.setAttribute('style', prevStyle);
+    app.dataset.layout = prevLayout || 'bottom';
+    panel.hidden = wasHidden;
+    return h;
   }
 
   function layout() {
@@ -46,15 +67,32 @@
       mode = 'bottom';
       box = { w: W, h: stageH };
     } else {
-      var side = fitCourt(W - GAP - PANEL_MIN_W, stageH, 1);
-      var below = fitCourt(W, stageH - GAP - PANEL_MIN_H, 1);
-      if (side.scale >= below.scale) {
-        mode = 'side';
-        box = { w: W - GAP - PANEL_MIN_W, h: stageH };
-      } else {
-        mode = 'bottom';
-        box = { w: W, h: stageH - GAP - PANEL_MIN_H };
+      // Panel below: it spans the full width, so its height is what it needs.
+      var needBelow = panelNeeds('bottom', W);
+      var bandH = clamp(needBelow, PANEL_MIN_H, Math.round(H * PANEL_MAX_FRAC));
+      var below = fitCourt(W, stageH - GAP - bandH, 1);
+
+      // Panel beside: widen it until its content fits the full height. Extra
+      // width turns into extra columns, which is what shortens it.
+      var maxW = Math.max(PANEL_MIN_W, Math.round(W * PANEL_MAX_FRAC));
+      var bandW = PANEL_MIN_W, needSide = 0;
+      for (var w = PANEL_MIN_W; w <= maxW; w += 56) {
+        bandW = w;
+        needSide = panelNeeds('side', w);
+        if (needSide <= H) break;
       }
+      var side = fitCourt(W - GAP - bandW, stageH, 1);
+
+      // Fitting the panel is worth giving up some court, but not a lot: a band
+      // the panel must scroll in costs 15%, so a far bigger court still wins.
+      var SCROLL_PENALTY = 0.85;
+      var scoreSide = side.scale * (needSide <= H ? 1 : SCROLL_PENALTY);
+      var scoreBelow = below.scale * (needBelow <= bandH ? 1 : SCROLL_PENALTY);
+      var useSide = scoreSide >= scoreBelow;
+
+      mode = useSide ? 'side' : 'bottom';
+      box = useSide ? { w: W - GAP - bandW, h: stageH }
+                    : { w: W, h: stageH - GAP - bandH };
     }
 
     var dpr = Math.min(global.devicePixelRatio || 1, 2.5);
@@ -77,6 +115,7 @@
     canvas.style.height = view.cssH + 'px';
     canvas.width = Math.round(view.cssW * dpr);
     canvas.height = Math.round(view.cssH * dpr);
+    canvasRect = null;
     draw();
   }
 
@@ -127,6 +166,14 @@
 
   /* ---------- drawing ---------- */
 
+  var drawPending = false;
+
+  function requestDraw() {
+    if (drawPending) return;
+    drawPending = true;
+    requestAnimationFrame(function () { drawPending = false; draw(); });
+  }
+
   function draw(overrideFrame) {
     var doc = S.doc;
     var frame = overrideFrame || S.frame();
@@ -146,8 +193,10 @@
 
   /* ---------- pointer input ---------- */
 
+  var canvasRect = null;   // refreshed by layout(); the page itself never scrolls
+
   function at(e) {
-    var r = canvas.getBoundingClientRect();
+    var r = canvasRect || (canvasRect = canvas.getBoundingClientRect());
     return view.unproject(e.clientX - r.left, e.clientY - r.top);
   }
 
@@ -172,7 +221,7 @@
   function onDown(e) {
     if (playing()) { stopPlayback(true); return; }
     e.preventDefault();
-    canvas.setPointerCapture(e.pointerId);
+    try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* not a live pointer */ }
     var p = at(e), frame = S.frame();
 
     if (tool === 'shuttle') {
@@ -212,29 +261,50 @@
     };
   }
 
+  var MIN_STEP = 0.025;   // metres between recorded pen points (~1px on screen)
+
+  function addPoint(s, p) {
+    var last = s.pts[s.pts.length - 1];
+    if (Math.hypot(p.x - last.x, p.y - last.y) < MIN_STEP) return;
+    s.pts.push(p);
+  }
+
   function onMove(e) {
     if (!active || active.id !== e.pointerId) return;
     e.preventDefault();
-    var p = at(e), frame = S.frame();
+    var frame = S.frame();
 
-    if (active.kind === 'shuttle') {
-      moveShuttle(p);
-    } else if (active.kind === 'player') {
-      var i = active.i, theirs = i >= 2;
-      frame.players[i].x = clamp(p.x, LIM.x0, LIM.x1);
-      frame.players[i].y = theirs
-        ? clamp(p.y, LIM.theirY0, LIM.theirY1)
-        : clamp(p.y, LIM.ourY0, LIM.ourY1);
-    } else if (active.kind === 'erase') {
-      if (!eraseAt(p)) { draw(); return; }
-    } else {
+    if (active.kind === 'stroke') {
       var s = frame.strokes[frame.strokes.length - 1];
       if (!s) return;
-      if (s.type === 'arrow') s.pts = [s.pts[0], p];
-      else s.pts.push(p);
+      if (s.type === 'arrow') {
+        s.pts = [s.pts[0], at(e)];
+      } else {
+        // Every sample the browser buffered since the last frame, so throttling
+        // the redraw does not coarsen the ink.
+        var batch = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+        if (batch && batch.length) {
+          for (var i = 0; i < batch.length; i++) addPoint(s, at(batch[i]));
+        } else {
+          addPoint(s, at(e));
+        }
+      }
+    } else {
+      var p = at(e);
+      if (active.kind === 'shuttle') {
+        moveShuttle(p);
+      } else if (active.kind === 'player') {
+        var j = active.i, theirs = j >= 2;
+        frame.players[j].x = clamp(p.x, LIM.x0, LIM.x1);
+        frame.players[j].y = theirs
+          ? clamp(p.y, LIM.theirY0, LIM.theirY1)
+          : clamp(p.y, LIM.ourY0, LIM.ourY1);
+      } else if (active.kind === 'erase') {
+        eraseAt(p);
+      }
     }
     dirty = true;
-    draw();
+    requestDraw();
   }
 
   function onUp(e) {

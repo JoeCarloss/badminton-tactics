@@ -9,7 +9,7 @@
     widthSingles: 5.18,
     shortService: 1.98,        // from the net
     longServiceDoubles: 0.76,  // from the back boundary
-    margin: 0.80               // run-off drawn around the court
+    margin: 0.65               // run-off drawn around the court
   };
   COURT.netY = COURT.length / 2;
   COURT.singlesInset = (COURT.widthDoubles - COURT.widthSingles) / 2;

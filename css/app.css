@@ -93,6 +93,9 @@ input[type=text] {
 .topbar h1 {
   font-size: clamp(13px, 1.6vw, 17px);
   margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 .topbar-play {
@@ -220,7 +223,9 @@ canvas {
 .panel[hidden] { display: none; }
 
 /* Panel beside the court: one column. Panel below: flow across the width. */
-.app[data-layout="side"] .panel { grid-template-columns: minmax(0, 1fr); }
+.app[data-layout="side"] .panel {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
 .app[data-layout="bottom"] .panel {
   grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   align-content: center;
@@ -269,11 +274,25 @@ canvas {
 }
 .hint b { color: var(--text); }
 
-/* Very short screens: trim the chrome so the panel still fits its band. */
-@media (max-height: 520px) {
-  :root { --tap: 28px; }
+/* Phones: shrink the controls so the panel needs a smaller band, and drop
+   the parts that are decoration rather than control. */
+@media (max-width: 600px), (max-height: 560px) {
+  :root { --tap: 30px; --gap: 5px; }
+  .topbar { gap: 6px; padding: 4px 8px; min-height: 36px; }
   .topbar h1 { font-size: 12px; }
+  .topbar-play { display: none; }
+  .topbar-actions button { font-size: 11px; padding: 4px 8px; }
   .hint { display: none; }
+  .group { gap: 3px; }
+  .group > label { font-size: 10px; }
+  .grid2 { gap: 3px; }
+  .grid2 button { font-size: 10px; padding: 3px 2px; }
+  .panel { padding: 5px; gap: 5px; }
+  .app[data-layout="bottom"] .panel { grid-template-columns: repeat(auto-fit, minmax(118px, 1fr)); }
+  .app[data-layout="side"] .panel { grid-template-columns: repeat(auto-fit, minmax(132px, 1fr)); }
+  .framebar { padding: 4px 5px; gap: 4px; }
+  .framebar button { font-size: 11px; padding: 4px 7px; }
+  .speed input[type=range] { width: 56px; }
 }
 
 /* ---------- library sheet ---------- */
