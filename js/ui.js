@@ -218,31 +218,47 @@
     return false;
   }
 
+  function grabAt(p, frame) {
+    var drawing = tool !== 'move';
+    var pr = drawing ? M.playerRadius : Math.max(M.playerGrab, 26 / view.scale);
+    var sr = drawing ? M.shuttleHeight * 0.55 : Math.max(M.shuttleGrab, 24 / view.scale);
+
+    // Players are drawn on top, so they win a tie.
+    var pick = -1, best = pr;
+    frame.players.forEach(function (v, j) {
+      if (!S.visiblePlayer(j)) return;
+      var d = Math.hypot(p.x - v.x, p.y - v.y);
+      if (d < best) { best = d; pick = j; }
+    });
+    if (pick >= 0) return { kind: 'player', i: pick };
+
+    if (Math.hypot(p.x - frame.shuttle.x, p.y - frame.shuttle.y) < sr) {
+      return { kind: 'shuttle' };
+    }
+    return null;
+  }
+
   function onDown(e) {
     if (playing()) { stopPlayback(true); return; }
     e.preventDefault();
     try { canvas.setPointerCapture(e.pointerId); } catch (err) { /* not a live pointer */ }
     var p = at(e), frame = S.frame();
 
-    if (tool === 'shuttle') {
+    // Markers answer a direct touch whatever the tool is, so moving a player or
+    // the shuttle never needs a mode change. Only drawing does.
+    var grabbed = grabAt(p, frame);
+    if (grabbed) {
       S.pushHistory();
-      active = { kind: 'shuttle', id: e.pointerId };
-      moveShuttle(p);
-      changed();
-    } else if (tool === 'move') {
-      var pick = -1, bestD = M.playerGrab;
-      frame.players.forEach(function (v, j) {
-        if (!S.visiblePlayer(j)) return;
-        var d = Math.hypot(p.x - v.x, p.y - v.y);
-        if (d < bestD) { bestD = d; pick = j; }
-      });
-      if (pick >= 0) {
-        S.pushHistory();
-        active = { kind: 'player', i: pick, id: e.pointerId };
-      }
+      grabbed.id = e.pointerId;
+      active = grabbed;
+      return;
+    }
+
+    if (tool === 'move') {
+      return;
     } else if (tool === 'erase') {
       S.pushHistory();
-      active = { kind: 'erase', id: e.pointerId };
+      active = { kind: 'erase', id: e.pointerId, last: p };
       if (eraseAt(p)) changed();
     } else {
       S.pushHistory();
@@ -262,6 +278,7 @@
   }
 
   var MIN_STEP = 0.025;   // metres between recorded pen points (~1px on screen)
+  var ERASE_STEP = 0.18;  // metres the eraser must travel before biting again
 
   function addPoint(s, p) {
     var last = s.pts[s.pts.length - 1];
@@ -300,7 +317,12 @@
           ? clamp(p.y, LIM.theirY0, LIM.theirY1)
           : clamp(p.y, LIM.ourY0, LIM.ourY1);
       } else if (active.kind === 'erase') {
-        eraseAt(p);
+        // Only bite again once the finger has actually travelled, so a tap
+        // takes one stroke rather than everything stacked under it.
+        if (Math.hypot(p.x - active.last.x, p.y - active.last.y) >= ERASE_STEP) {
+          active.last = p;
+          eraseAt(p);
+        }
       }
     }
     dirty = true;
@@ -564,6 +586,7 @@
       changed();
     };
     $('resetPlayers').onclick = function () { S.resetPlayers(); changed(); };
+    $('resetShuttle').onclick = function () { S.resetShuttle(); changed(); };
     $('savePng').onclick = exportPng;
 
     $('framePrev').onclick = function () { stopPlayback(false); S.gotoFrame(S.doc.index - 1); syncUI(); draw(); };

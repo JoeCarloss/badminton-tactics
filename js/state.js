@@ -107,6 +107,10 @@
       p[0].x = cx; p[2].x = cx;
     }
     frame().players = p;
+  }
+
+  function resetShuttle() {
+    pushHistory();
     frame().shuttle = { x: COURT.widthDoubles / 2, y: COURT.netY };
   }
 
@@ -332,6 +336,7 @@
     ourIndices: ourIndices,
     visiblePlayer: visiblePlayer,
     resetPlayers: resetPlayers,
+    resetShuttle: resetShuttle,
     defaultFrame: defaultFrame,
     persist: persist,
     loadSession: loadSession,
