@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101827">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="전술판">
+<meta name="mobile-web-app-capable" content="yes">
+<title>배드민턴 전술판</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<header class="topbar">
+  <h1>🏸 배드민턴 전술판</h1>
+  <div class="topbar-play">
+    <span id="playLabel" class="play-name">저장되지 않은 전술</span>
+    <span id="dirtyDot" class="dirty" hidden title="저장되지 않은 변경">●</span>
+  </div>
+  <div class="topbar-actions">
+    <button id="togglePanel" title="조작 패널을 숨겨 코트만 봅니다">도구 숨기기</button>
+    <button id="openLibrary" class="primary">전술 목록</button>
+    <button id="quickSave">저장</button>
+  </div>
+</header>
+
+<main class="app">
+  <section class="board">
+    <div class="stage" id="stage">
+      <canvas id="court" aria-label="배드민턴 전술 코트"></canvas>
+    </div>
+
+    <div class="framebar">
+      <button id="framePrev" title="이전 프레임">◀</button>
+      <div id="frameChips" class="chips" role="tablist" aria-label="프레임"></div>
+      <button id="frameNext" title="다음 프레임">▶</button>
+      <span class="framebar-sep"></span>
+      <button id="frameAdd" title="현재 프레임을 복제해 추가">＋ 프레임</button>
+      <button id="frameDel" title="현재 프레임 삭제">－ 삭제</button>
+      <button id="playBtn" class="primary" title="프레임 순서대로 재생">▶ 재생</button>
+      <label class="speed">
+        속도
+        <input id="speed" type="range" min="300" max="2200" step="100" value="900">
+      </label>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="group">
+      <label>도구</label>
+      <div class="grid2">
+        <button data-tool="move" class="active">✋ 선수 이동</button>
+        <button data-tool="shuttle">🏸 셔틀 이동</button>
+        <button data-tool="pen">✏️ 펜</button>
+        <button data-tool="arrow">↗ 화살표</button>
+        <button data-tool="erase" class="span2">◻ 지우개</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <label>경기 방식</label>
+      <div class="grid2">
+        <button id="doubles" class="active">복식</button>
+        <button id="singles">단식</button>
+      </div>
+    </div>
+
+    <div class="group">
+      <label>담당 존</label>
+      <div class="grid2">
+        <button id="zoneToggle" class="active">존 켜짐</button>
+        <button id="zoneMode">자동 존</button>
+      </div>
+      <label class="slider" for="radius">범위 <span id="radiusVal">100%</span></label>
+      <input id="radius" type="range" min="40" max="180" value="100">
+      <label class="slider" for="opacity">진하기 <span id="opacityVal">30%</span></label>
+      <input id="opacity" type="range" min="5" max="65" value="30">
+    </div>
+
+    <div class="group">
+      <label>펜</label>
+      <div class="swatches" id="swatches">
+        <button class="swatch active" data-color="#ffe25c" style="--c:#ffe25c" aria-label="노랑"></button>
+        <button class="swatch" data-color="#ffffff" style="--c:#ffffff" aria-label="흰색"></button>
+        <button class="swatch" data-color="#ff6a83" style="--c:#ff6a83" aria-label="분홍"></button>
+        <button class="swatch" data-color="#65e8ff" style="--c:#65e8ff" aria-label="하늘"></button>
+        <button class="swatch" data-color="#8cff9e" style="--c:#8cff9e" aria-label="연두"></button>
+      </div>
+      <label class="slider" for="size">굵기 <span id="sizeVal">10cm</span></label>
+      <input id="size" type="range" min="3" max="30" value="10">
+    </div>
+
+    <div class="group">
+      <label>편집</label>
+      <div class="grid2">
+        <button id="undo">↶ 되돌리기</button>
+        <button id="redo">↷ 다시 실행</button>
+        <button id="clearInk">그림 지우기</button>
+        <button id="resetPlayers">선수 초기화</button>
+        <button id="savePng" class="span2">🖼 PNG 저장</button>
+      </div>
+    </div>
+
+    <p class="hint">
+      선수 원을 드래그해 위치를 옮기고, <b>＋ 프레임</b>으로 다음 동작을 찍으면
+      <b>재생</b>이 로테이션을 이어서 보여줍니다.
+    </p>
+  </aside>
+</main>
+
+<!-- 전술 목록 -->
+<div id="library" class="sheet" hidden>
+  <div class="sheet-box" role="dialog" aria-modal="true" aria-labelledby="libTitle">
+    <div class="sheet-head">
+      <h2 id="libTitle">전술 목록</h2>
+      <button id="closeLibrary" class="ghost">닫기</button>
+    </div>
+
+    <div class="sheet-save">
+      <input id="playNameInput" type="text" placeholder="전술 이름 (예: 수비 → 공격 전환)" autocomplete="off">
+      <button id="saveCurrent" class="primary">저장</button>
+      <button id="saveAsNew">새로 저장</button>
+    </div>
+
+    <div id="playList" class="play-list"></div>
+
+    <div class="sheet-foot">
+      <button id="newPlay">＋ 새 전술</button>
+      <span class="framebar-sep"></span>
+      <button id="exportAll">전체 내보내기</button>
+      <button id="importBtn">가져오기</button>
+      <input id="importFile" type="file" accept="application/json,.json" hidden>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast" hidden></div>
+
+<script src="js/geometry.js"></script>
+<script src="js/state.js"></script>
+<script src="js/render.js"></script>
+<script src="js/ui.js"></script>
+<script>
+if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').catch(function () {});
+  });
+}
+</script>
+</body>
+</html>

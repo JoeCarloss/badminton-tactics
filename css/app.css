@@ -1,0 +1,362 @@
+/* One layout, two orientations. No positional (:nth-child) layout rules. */
+
+:root {
+  color-scheme: dark;
+  --bg: #101827;
+  --surface: #1b2a3f;
+  --surface-2: #17263a;
+  --btn: #304760;
+  --btn-edge: #4a6481;
+  --accent: #197eac;
+  --accent-edge: #6fd8ff;
+  --text: #eef3ff;
+  --muted: #9daec7;
+  --gap: 6px;
+  --radius: 10px;
+  --tap: 34px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 14px/1.4 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  display: flex;
+  flex-direction: column;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right)
+           env(safe-area-inset-bottom) env(safe-area-inset-left);
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* ---------- controls ---------- */
+
+button, select, input {
+  font: inherit;
+  color: var(--text);
+  touch-action: manipulation;
+}
+
+button {
+  background: var(--btn);
+  border: 1px solid var(--btn-edge);
+  border-radius: var(--radius);
+  padding: 6px 8px;
+  min-height: var(--tap);
+  cursor: pointer;
+  white-space: nowrap;
+}
+button:active { filter: brightness(1.25); }
+button.active { background: var(--accent); border-color: var(--accent-edge); }
+button.primary { background: #1d6c8f; border-color: #51b8dd; }
+button.ghost { background: transparent; border-color: transparent; color: var(--muted); }
+button:disabled { opacity: .38; cursor: default; }
+
+input[type=range] {
+  width: 100%;
+  height: 22px;
+  margin: 0;
+  accent-color: var(--accent-edge);
+}
+
+input[type=text] {
+  background: #22344c;
+  border: 1px solid var(--btn-edge);
+  border-radius: var(--radius);
+  padding: 8px 10px;
+  min-height: var(--tap);
+  min-width: 0;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* ---------- top bar ---------- */
+
+.topbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 10px;
+  min-height: 40px;
+}
+.topbar h1 {
+  font-size: clamp(13px, 1.6vw, 17px);
+  margin: 0;
+  white-space: nowrap;
+}
+.topbar-play {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.play-name {
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dirty { color: #ffd45c; font-size: 10px; }
+.topbar-actions { display: flex; gap: var(--gap); flex: 0 0 auto; }
+.topbar-actions button { font-size: 12px; padding: 5px 11px; }
+
+/* ---------- app shell ---------- */
+
+.app {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  gap: var(--gap);
+  padding: 0 8px 8px;
+  /* Track sizes are written by layout() in js/ui.js; these are first-paint
+     defaults only. The board gets exactly the court's size, the panel the rest. */
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.board {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.stage {
+  flex: 1 1 auto;
+  min-height: 0;
+  min-width: 0;
+  background: var(--surface-2);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  border-radius: 7px;
+  touch-action: none;
+  box-shadow: 0 6px 26px rgba(0, 0, 0, .35);
+}
+
+/* ---------- frame bar ---------- */
+
+.framebar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 5px 7px;
+  overflow-x: auto;
+}
+.framebar button { font-size: 12px; padding: 5px 9px; }
+.framebar-sep {
+  flex: 0 0 auto;
+  width: 1px;
+  align-self: stretch;
+  background: #344860;
+  margin: 2px 3px;
+}
+.chips {
+  flex: 1 1 auto;
+  min-width: 40px;
+  display: flex;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.chips::-webkit-scrollbar { display: none; }
+.chip {
+  flex: 0 0 auto;
+  min-width: 30px;
+  min-height: 28px;
+  padding: 3px 7px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.speed {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.speed input[type=range] { width: 74px; }
+
+/* ---------- control panel ---------- */
+
+.panel {
+  min-width: 0;
+  min-height: 0;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 7px;
+  display: grid;
+  gap: 7px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  align-content: start;
+  overflow: auto;
+}
+.panel[hidden] { display: none; }
+
+/* Panel beside the court: one column. Panel below: flow across the width. */
+.app[data-layout="side"] .panel { grid-template-columns: minmax(0, 1fr); }
+.app[data-layout="bottom"] .panel {
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  align-content: center;
+}
+.app[data-layout="bottom"] .hint { grid-column: auto; align-self: center; }
+
+.group { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.group > label {
+  font-size: 11px;
+  color: #d3dfed;
+  letter-spacing: .02em;
+}
+.group label.slider {
+  font-size: 10px;
+  color: var(--muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.grid2 button { font-size: 11px; padding: 4px 3px; }
+.span2 { grid-column: 1 / -1; }
+
+.swatches { display: flex; gap: 5px; }
+.swatch {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0;
+  background: var(--c);
+  border: 2px solid transparent;
+  border-radius: 7px;
+}
+.swatch.active {
+  background: var(--c);   /* beats button.active */
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--accent);
+}
+
+.hint {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.55;
+  color: #afc0d6;
+}
+.hint b { color: var(--text); }
+
+/* Very short screens: trim the chrome so the panel still fits its band. */
+@media (max-height: 520px) {
+  :root { --tap: 28px; }
+  .topbar h1 { font-size: 12px; }
+  .hint { display: none; }
+}
+
+/* ---------- library sheet ---------- */
+
+.sheet {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 12, 22, .72);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 20;
+}
+.sheet[hidden] { display: none; }
+
+.sheet-box {
+  width: min(560px, 100%);
+  max-height: min(86dvh, 660px);
+  background: var(--surface);
+  border: 1px solid #344860;
+  border-radius: 16px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, .55);
+}
+.sheet-head { display: flex; align-items: center; justify-content: space-between; }
+.sheet-head h2 { margin: 0; font-size: 16px; }
+
+.sheet-save { display: flex; gap: var(--gap); }
+.sheet-save input { flex: 1 1 auto; }
+.sheet-save button { flex: 0 0 auto; font-size: 12px; }
+
+.play-list {
+  flex: 1 1 auto;
+  min-height: 60px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  -webkit-overflow-scrolling: touch;
+}
+.play-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: #22344c;
+  border: 1px solid #35506e;
+  border-radius: var(--radius);
+  padding: 7px 9px;
+}
+.play-row.current { border-color: var(--accent-edge); }
+.play-info { flex: 1 1 auto; min-width: 0; }
+.play-info b {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.play-info span { font-size: 11px; color: var(--muted); }
+.play-row button { font-size: 11px; padding: 4px 8px; min-height: 30px; }
+.play-empty { color: var(--muted); font-size: 12px; text-align: center; padding: 22px 0; }
+
+.sheet-foot { display: flex; align-items: center; gap: var(--gap); }
+.sheet-foot button { font-size: 12px; }
+
+/* ---------- toast ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  background: #0d1b2c;
+  border: 1px solid var(--btn-edge);
+  border-radius: 999px;
+  padding: 9px 17px;
+  font-size: 13px;
+  z-index: 40;
+  box-shadow: 0 8px 26px rgba(0, 0, 0, .5);
+}
+.toast[hidden] { display: none; }

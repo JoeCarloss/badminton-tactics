@@ -1,0 +1,104 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><title>Badminton Tactics Studio · Controls Fixed</title><style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#101827;color:#eef3ff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}header{padding:13px 16px 7px;display:flex;justify-content:space-between;align-items:center}h1{font-size:19px;margin:0}small{color:#9daec7}.wrap{display:grid;grid-template-columns:minmax(0,1fr) 220px;gap:12px;padding:8px 12px 16px;max-width:1200px;margin:auto}.stage{background:#17263a;border-radius:14px;padding:10px;display:flex;align-items:center;justify-content:center;min-height:70vh}canvas{display:block;max-width:100%;max-height:82vh;width:auto;height:auto;touch-action:none;border-radius:8px;background:#14745c;box-shadow:0 6px 28px #0005}.panel{background:#1b2a3f;padding:13px;border-radius:14px;display:flex;flex-direction:column;gap:11px}button,select,input{font:inherit}button{background:#304760;color:white;border:1px solid #4a6481;border-radius:9px;padding:10px 8px;cursor:pointer}button.active{background:#197eac;border-color:#6fd8ff}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:7px}label{font-size:13px;color:#d3dfed}input[type=range]{width:100%}.hint{font-size:12px;color:#afc0d6;line-height:1.5}.separator{border-top:1px solid #344860;margin:2px 0}@media(max-width:760px){.wrap{grid-template-columns:1fr}.stage{min-height:0;padding:7px}canvas{max-height:66vh}.panel{display:grid;grid-template-columns:1fr 1fr;gap:10px}.panel .wide{grid-column:1/-1}header{padding-top:10px}}
+
+/* iPad full-screen, no page scrolling. */
+html,body{width:100%;height:100%;height:100dvh;overflow:hidden;overscroll-behavior:none}
+body{display:flex;flex-direction:column}
+header{flex:0 0 auto;padding:5px 12px;min-height:39px;gap:8px}
+h1{font-size:clamp(13px,1.7vw,18px);white-space:nowrap}
+header small{font-size:10px}header #save{padding:6px 12px;flex-shrink:0}
+.wrap{flex:1;min-height:0;min-width:0;width:100%;max-width:none;margin:0;padding:5px 8px 8px;gap:8px;overflow:hidden}
+.stage{min-width:0;min-height:0;height:100%;width:100%;padding:5px;overflow:hidden}
+canvas{display:block;width:auto;height:auto;max-width:none;max-height:none;flex:none;touch-action:none}
+.panel{min-width:0;min-height:0;height:100%;overflow:hidden;padding:7px;gap:5px;align-content:start}
+.panel label{font-size:11px}.panel button{padding:5px 3px;font-size:11px;min-height:28px}
+.panel .buttons{gap:4px}.panel .buttons[style]{margin-top:3px!important}
+.panel input[type=range]{height:17px;margin:2px 0}.panel select{padding:4px!important;font-size:11px}
+.panel .hint{display:none}.panel .separator{display:none}
+@media (orientation:landscape){
+ .wrap{grid-template-columns:minmax(0,1.15fr) minmax(400px,1fr)}
+ .panel{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:min-content;gap:7px;align-content:center}
+ .panel .wide{grid-column:span 3}
+ .panel .wide:first-child{grid-column:span 3}
+ .panel .wide.buttons{grid-column:span 3;grid-template-columns:repeat(4,1fr)}
+}
+@media (orientation:portrait){
+ .wrap{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:5px}
+ .panel{height:auto;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px;align-items:center}
+ .panel .wide{grid-column:span 4}
+ .panel .wide:first-child{grid-column:span 4}
+ .panel .wide.buttons{grid-column:span 4;grid-template-columns:repeat(4,1fr)}
+ .panel>div:nth-child(2),.panel>div:nth-child(3),.panel>div:nth-child(4){grid-column:span 2}
+ .panel>div:nth-child(5),.panel>div:nth-child(6),.panel>div:nth-child(7),.panel>div:nth-child(8){grid-column:span 1}
+ .panel>div:nth-child(5) label,.panel>div:nth-child(6) label{font-size:10px}
+}
+@media (max-height:650px) and (orientation:landscape){header small{display:none}.panel{gap:3px}.panel button{min-height:24px;padding:3px 2px}.panel label{font-size:10px}}
+
+/* Compact control panel: court receives most of the iPad screen. */
+@media (orientation:landscape){
+ .wrap{grid-template-columns:minmax(0,1fr) 194px;gap:5px}
+ .panel{display:flex;flex-direction:column;justify-content:flex-start;align-content:initial;gap:4px;padding:5px;overflow:hidden}
+ .panel .wide,.panel .wide:first-child{grid-column:auto}
+ .panel .wide.buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:3px}
+ .panel label{font-size:10px}
+ .panel button{font-size:10px;min-height:25px;padding:3px 2px}
+ .panel .buttons{gap:3px}
+ .panel input[type=range]{height:13px;margin:0}
+ .panel select{font-size:10px;padding:3px!important}
+ .panel .buttons[style]{margin-top:2px!important}
+}
+@media (orientation:portrait){
+ .wrap{grid-template-rows:minmax(0,1fr) auto;gap:3px}
+ .panel{grid-template-columns:repeat(4,minmax(0,1fr));padding:4px;gap:3px}
+ .panel button{min-height:24px;padding:3px 2px;font-size:10px}
+ .panel label{font-size:10px}
+ .panel .buttons[style]{margin-top:2px!important}
+ .panel input[type=range]{height:13px;margin:0}
+ .panel select{padding:3px!important;font-size:10px}
+}
+
+button,select,input{touch-action:manipulation;position:relative;z-index:2} .panel{position:relative;z-index:1} canvas{position:relative;z-index:0} 
+</style></head><body><header><div><h1>🏸 Badminton Tactics Studio</h1><small>iPad 전술판 · 오프라인 버전 1.1 · 공식 코트 비율</small></div><button id="save">PNG 저장</button></header><main class="wrap"><section class="stage"><canvas id="court" width="760" height="1050" aria-label="배드민턴 전술 코트"></canvas></section><aside class="panel"><div class="wide"><label>도구</label><div class="buttons" style="margin-top:6px"><button data-tool="move" class="active">✋ 선수 이동</button><button data-tool="pen">✏️ 펜</button><button data-tool="arrow">↗️ 화살표</button><button data-tool="erase">◻️ 지우개</button></div></div><div><label>코트 경기 방식</label><div class="buttons" style="margin-top:6px"><button id="doubles" class="active">복식</button><button id="singles">단식</button></div></div><div><label>셔틀콕</label><div class="buttons" style="margin-top:6px"><button id="shuttleTool">🏸 셔틀 이동</button><button id="shuttleReset">중앙 배치</button></div></div><div><label>담당 존 표시</label><div class="buttons" style="margin-top:6px"><button id="zone" class="active">존 켜짐</button><button id="mode">자동 존</button></div></div><div><label for="radius">존 범위 <span id="radiusVal">100%</span></label><input id="radius" type="range" min="40" max="180" value="100"></div><div><label for="opacity">존 진하기 <span id="opacityVal">30%</span></label><input id="opacity" type="range" min="5" max="65" value="30"></div><div><label for="color">펜 색상</label><select id="color" style="width:100%;padding:9px;border-radius:8px;background:#304760;color:white"><option value="#ffe25c">노랑</option><option value="#ffffff">흰색</option><option value="#ff6a83">분홍</option><option value="#65e8ff">하늘</option></select></div><div><label for="size">펜 굵기</label><input id="size" type="range" min="2" max="22" value="7"></div><div class="wide separator"></div><div class="wide buttons"><button id="undo">↶ 되돌리기</button><button id="clearInk">그림 지우기</button><button id="reset">선수 초기화</button><button id="save2">이미지 저장</button></div><div class="wide hint">선수 이동: 선수 원을 드래그하세요.<br>펜/화살표: 코트에 직접 그리세요.<br>지우개: 그린 선을 터치하면 삭제됩니다.<br>자동 존: 두 선수의 위치에 따라 담당 구역이 실시간 변경됩니다. 버튼을 누르면 원형 존으로 전환합니다.<br>코트: 길이 13.40m, 복식 폭 6.10m, 단식 폭 5.18m, 서비스라인 1.98m, 복식 롱서비스라인은 끝선에서 0.76m.<br>셔틀 이동: 셔틀 이동 버튼을 누른 뒤 셔틀을 드래그하세요.<br>자동 저장: 같은 브라우저에서 다시 열면 배치가 복원됩니다.</div></aside></main><script>
+(()=>{'use strict';const canvas=document.getElementById('court'),ctx=canvas.getContext('2d'),W=760,H=1050;const bounds={x:167,y:55,w:426,h:940},mid=bounds.y+bounds.h/2;let courtMode='doubles',shuttle={x:380,y:525};let players=[{x:260,y:750,name:'A',team:0},{x:500,y:750,name:'B',team:0},{x:260,y:300,name:'C',team:1},{x:500,y:300,name:'D',team:1}],strokes=[],tool='move',active=null,zoneOn=true,autoZone=true,zoneScale=1,zoneAlpha=.3,penColor='#ffe25c',penSize=7;const $=id=>document.getElementById(id),clamp=(v,a,b)=>Math.max(a,Math.min(b,v));const state=()=>({players,strokes,zoneOn,autoZone,zoneScale,zoneAlpha,courtMode,shuttle});function persist(){try{localStorage.setItem('bts-v1',JSON.stringify(state()))}catch(e){}}try{const s=JSON.parse(localStorage.getItem('bts-v1')||'null');if(s&&Array.isArray(s.players)&&s.players.length===4){players=s.players;strokes=Array.isArray(s.strokes)?s.strokes:[];zoneOn=s.zoneOn!==false;autoZone=s.autoZone!==false;zoneScale=s.zoneScale||1;zoneAlpha=s.zoneAlpha||.3;courtMode=s.courtMode||'doubles';if(s.shuttle)shuttle=s.shuttle}}catch(e){}$('radius').value=Math.round(zoneScale*100);$('opacity').value=Math.round(zoneAlpha*100);function line(x1,y1,x2,y2,width=3,color='#fff'){ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke()}function drawCourt(){
+ctx.fillStyle='#16765d';ctx.fillRect(0,0,W,H);
+const {x,y,w,h}=bounds,net=y+h/2,scale=h/13.4;
+const singlesInset=(6.10-5.18)/2*scale,short=1.98*scale,long=0.76*scale;
+ctx.fillStyle='#12684f';ctx.fillRect(x,y,w,h);
+ctx.fillStyle='rgba(255,255,255,.075)';
+if(courtMode==='singles'){ctx.fillRect(x+singlesInset,y,w-2*singlesInset,h)}else{ctx.fillRect(x,y,w,h)}
+const c='#f7ffff';
+// All regulation lines, drawn to the same meter-to-pixel scale.
+line(x,y,x+w,y,3.5,c);line(x,y+h,x+w,y+h,3.5,c);
+line(x,y,x,y+h,3.5,c);line(x+w,y,x+w,y+h,3.5,c);
+line(x+singlesInset,y,x+singlesInset,y+h,3,c);
+line(x+w-singlesInset,y,x+w-singlesInset,y+h,3,c);
+line(x,net-short,x+w,net-short,3,c);
+line(x,net+short,x+w,net+short,3,c);
+line(x,y+long,x+w,y+long,3,c);
+line(x,y+h-long,x+w,y+h-long,3,c);
+line(W/2,y,W/2,net-short,3,c);
+line(W/2,net+short,W/2,y+h,3,c);
+// Net runs across the full doubles width.
+ctx.fillStyle='#d9faff';ctx.fillRect(x-12,net-5,w+24,10);
+ctx.fillStyle='#0b3b34';ctx.font='bold 16px system-ui';ctx.textAlign='center';ctx.textBaseline='alphabetic';
+ctx.fillText('상대 코트',W/2,31);ctx.fillText('우리 팀',W/2,H-17);
+}
+function drawShuttle(){const {x,y}=shuttle;ctx.save();ctx.translate(x,y);ctx.rotate(-Math.PI/5);ctx.shadowColor='#0009';ctx.shadowBlur=7;ctx.fillStyle='#f8fafc';ctx.strokeStyle='#243548';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,8);ctx.lineTo(-13,-17);ctx.quadraticCurveTo(0,-27,13,-17);ctx.closePath();ctx.fill();ctx.stroke();for(let i=-2;i<=2;i++){line(0,7,i*5,-18,1,'#8da4b5')}ctx.beginPath();ctx.ellipse(0,11,8,5,0,0,Math.PI*2);ctx.fillStyle='#e5d6a4';ctx.fill();ctx.stroke();ctx.restore()}
+function poly(points,fill){ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);ctx.closePath();ctx.fillStyle=fill;ctx.fill()}function zoneDraw(){if(!zoneOn)return;ctx.save();ctx.beginPath();ctx.rect(bounds.x,mid+7,bounds.w,bounds.h/2-7);ctx.clip();const ours=courtMode==='singles'?[players[0]]:players.slice(0,2);if(autoZone){const cell=16;for(let y=mid+8;y<bounds.y+bounds.h;y+=cell){for(let x=bounds.x;x<bounds.x+bounds.w;x+=cell){let scores=ours.map(p=>{const dx=(x-p.x),dy=(y-p.y);return dx*dx+dy*dy});const idx=scores[0]<=scores[1]?0:1;const distance=Math.sqrt(scores[idx]);const fade=clamp(1-distance/(300*zoneScale),0,1);if(fade>.01){ctx.fillStyle=idx===0?`rgba(92,197,255,${zoneAlpha*fade})`:`rgba(255,195,75,${zoneAlpha*fade})`;ctx.fillRect(x,y,cell+1,cell+1)}}}}else{ours.forEach((p,i)=>{let r=215*zoneScale,g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,r),rgb=i===0?'92,197,255':'255,195,75';g.addColorStop(0,`rgba(${rgb},${zoneAlpha})`);g.addColorStop(1,`rgba(${rgb},0)`);ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fill()})}ctx.restore()}function drawStroke(s){const pts=s.pts;if(!pts||!pts.length)return;ctx.strokeStyle=s.color;ctx.fillStyle=s.color;ctx.lineWidth=s.size;ctx.lineCap='round';ctx.lineJoin='round';ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)ctx.lineTo(pts[i].x,pts[i].y);if(pts.length===1)ctx.lineTo(pts[0].x+.1,pts[0].y+.1);ctx.stroke();if(s.type==='arrow'&&pts.length>1){const a=pts[pts.length-2],b=pts[pts.length-1],ang=Math.atan2(b.y-a.y,b.x-a.x),len=23+s.size;line(b.x,b.y,b.x-len*Math.cos(ang-.5),b.y-len*Math.sin(ang-.5),s.size,s.color);line(b.x,b.y,b.x-len*Math.cos(ang+.5),b.y-len*Math.sin(ang+.5),s.size,s.color)}}function drawPlayers(){players.forEach((p,i)=>{if(courtMode==='singles'&&(i===1||i===3))return;ctx.beginPath();ctx.arc(p.x,p.y,28,0,Math.PI*2);ctx.fillStyle=i<2?'#39a8ee':'#f26783';ctx.fill();ctx.lineWidth=4;ctx.strokeStyle='#fff';ctx.stroke();ctx.fillStyle='#fff';ctx.font='bold 24px system-ui';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(p.name,p.x,p.y+1)})}function render(){drawCourt();zoneDraw();strokes.forEach(drawStroke);drawShuttle();drawPlayers()}function coords(e){const r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*W/r.width,y:(e.clientY-r.top)*H/r.height}}function nearSeg(p,a,b){let dx=b.x-a.x,dy=b.y-a.y,t=dx*dx+dy*dy?clamp(((p.x-a.x)*dx+(p.y-a.y)*dy)/(dx*dx+dy*dy),0,1):0;return Math.hypot(p.x-(a.x+t*dx),p.y-(a.y+t*dy))}function eraseAt(p){let idx=-1;for(let j=strokes.length-1;j>=0;j--){const s=strokes[j];if(s.pts.some((a,i)=>i===0?Math.hypot(p.x-a.x,p.y-a.y)<22:nearSeg(p,s.pts[i-1],a)<22+s.size)){idx=j;break;}}if(idx>=0){strokes.splice(idx,1);persist()}}canvas.addEventListener('pointerdown',e=>{e.preventDefault();canvas.setPointerCapture(e.pointerId);let p=coords(e);if(tool==='shuttle'){active={kind:'shuttle',id:e.pointerId};shuttle={x:p.x,y:p.y};render()}else if(tool==='move'){let i=players.findIndex((v,j)=>(courtMode!=='singles'||(j!==1&&j!==3))&&Math.hypot(p.x-v.x,p.y-v.y)<43);if(i>=0)active={kind:'player',i,id:e.pointerId}}else if(tool==='erase'){active={kind:'erase',id:e.pointerId};eraseAt(p);render()}else{active={kind:'stroke',id:e.pointerId};strokes.push({type:tool,color:penColor,size:penSize,pts:[p]});render()}});canvas.addEventListener('pointermove',e=>{if(!active||active.id!==e.pointerId)return;e.preventDefault();let p=coords(e);if(active.kind==='shuttle'){shuttle={x:clamp(p.x,bounds.x,bounds.x+bounds.w),y:clamp(p.y,bounds.y,bounds.y+bounds.h)}}else if(active.kind==='player'){let i=active.i,top=i>=2,lo=top?bounds.y+25:mid+32,hi=top?mid-32:bounds.y+bounds.h-25;players[i].x=clamp(p.x,bounds.x+25,bounds.x+bounds.w-25);players[i].y=clamp(p.y,lo,hi)}else if(active.kind==='erase'){eraseAt(p)}else{let s=strokes[strokes.length-1];if(s.type==='arrow')s.pts=[s.pts[0],p];else s.pts.push(p)}render()});function end(e){if(active&&active.id===e.pointerId){active=null;persist();render()}}canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);document.querySelectorAll('[data-tool]').forEach(b=>b.addEventListener('click',()=>{tool=b.dataset.tool;$('shuttleTool').classList.remove('active');document.querySelectorAll('[data-tool]').forEach(x=>x.classList.toggle('active',x===b))}));$('shuttleTool').onclick=()=>{tool='shuttle';document.querySelectorAll('[data-tool]').forEach(x=>x.classList.remove('active'));$('shuttleTool').classList.add('active')};$('shuttleReset').onclick=()=>{shuttle={x:380,y:525};persist();render()};function setCourtMode(m){courtMode=m;$('doubles').classList.toggle('active',m==='doubles');$('singles').classList.toggle('active',m==='singles');persist();render()}$('doubles').onclick=()=>setCourtMode('doubles');$('singles').onclick=()=>setCourtMode('singles');$('zone').onclick=()=>{zoneOn=!zoneOn;$('zone').textContent=zoneOn?'존 켜짐':'존 꺼짐';$('zone').classList.toggle('active',zoneOn);persist();render()};$('mode').onclick=()=>{autoZone=!autoZone;$('mode').textContent=autoZone?'자동 존':'원형 존';persist();render()};$('radius').oninput=e=>{zoneScale=+e.target.value/100;$('radiusVal').textContent=e.target.value+'%';persist();render()};$('opacity').oninput=e=>{zoneAlpha=+e.target.value/100;$('opacityVal').textContent=e.target.value+'%';persist();render()};$('color').onchange=e=>penColor=e.target.value;$('size').oninput=e=>penSize=+e.target.value;$('undo').onclick=()=>{strokes.pop();persist();render()};$('clearInk').onclick=()=>{if(confirm('그린 선과 화살표를 모두 지울까요?')){strokes=[];persist();render()}};$('reset').onclick=()=>{players=[{x:260,y:750,name:'A',team:0},{x:500,y:750,name:'B',team:0},{x:260,y:300,name:'C',team:1},{x:500,y:300,name:'D',team:1}];persist();render()};function save(){render();canvas.toBlob(blob=>{if(!blob)return;const file=new File([blob],'badminton-tactics.png',{type:'image/png'});if(navigator.canShare&&navigator.canShare({files:[file]})){navigator.share({files:[file],title:'Badminton Tactics Studio'}).catch(()=>{})}else{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='badminton-tactics.png';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)}},'image/png')}$('save').onclick=save;$('save2').onclick=save;$('zone').textContent=zoneOn?'존 켜짐':'존 꺼짐';$('zone').classList.toggle('active',zoneOn);$('mode').textContent=autoZone?'자동 존':'원형 존';$('doubles').classList.toggle('active',courtMode==='doubles');$('singles').classList.toggle('active',courtMode==='singles');$('radiusVal').textContent=Math.round(zoneScale*100)+'%';$('opacityVal').textContent=Math.round(zoneAlpha*100)+'%';render()})();
+</script><script>
+(function(){
+ const canvas=document.getElementById('court'),stage=document.querySelector('.stage');
+ function fit(){
+   const r=stage.getBoundingClientRect();
+   const w=Math.max(1,r.width-10),h=Math.max(1,r.height-10);
+   const scale=Math.min(w/760,h/1050);
+   canvas.style.width=Math.floor(760*scale)+'px';
+   canvas.style.height=Math.floor(1050*scale)+'px';
+ }
+ if(window.ResizeObserver){const ro=new ResizeObserver(fit);ro.observe(stage);}else{window.addEventListener('resize',fit);}
+ window.addEventListener('orientationchange',()=>requestAnimationFrame(fit));
+ window.addEventListener('resize',fit);fit();
+ // Canvas itself handles drawing gestures; never intercept touches on toolbar buttons.
+
+})();
+</script></body></html>
