@@ -45,6 +45,14 @@
     splitL: 2.55, splitR: 3.56,
     straightDrift: 0.24,   // sideways drag under this still counts as straight
     sameColumn: 0.51,      // pair this close in x counts as one column
+    diagRearMin: 9.54,     // picking up a mid-rear player arms the diagonal
+    diagRearMax: 11.47,
+    diagCentre: 0.73,      // ... while they are this near the centre line
+    diagPartnerY: 9.74,    // ... and the partner is front and wide
+    diagDy: 0.49,          // the drag must carry this far back
+    diagDx: 0.61,          // ... and this far across
+    diagStep: 0.045,       // ... gaining this much along the diagonal
+    diagMinY: 10.90,
     zoneReach: 5.05,
     eraseR: 0.34
   };
@@ -110,22 +118,40 @@
   }
 
   function inBounds(q) {
-    return q.x >= L.xMin && q.x <= L.xMax && q.y >= L.minY && q.y <= L.maxY;
+    return q.x >= L.xMin - 1e-7 && q.x <= L.xMax + 1e-7 &&
+           q.y >= L.minY - 1e-7 && q.y <= L.maxY + 1e-7;
   }
-  function holdGap(a, b) {
-    var dx = b.x - a.x, dy = b.y - a.y, dist = Math.hypot(dx, dy);
-    if (dist < 1e-4) return b;
-    var out = { x: a.x + dx / dist * L.attackGap, y: a.y + dy / dist * L.attackGap };
-    if (inBounds(out)) return out;
-    var best = null, bestScore = Infinity;
-    for (var k = 0; k < 720; k++) {
-      var th = 2 * Math.PI * k / 720;
-      var c = { x: a.x + Math.cos(th) * L.attackGap, y: a.y + Math.sin(th) * L.attackGap };
-      if (!inBounds(c)) continue;
-      var score = (c.x - out.x) * (c.x - out.x) + (c.y - out.y) * (c.y - out.y);
-      if (score < bestScore) { bestScore = score; best = c; }
+
+  /* The partner always ends up exactly one attack gap away. Sweep outward from
+     the wanted direction and take the first angle that stays on court: every
+     candidate sits on the same circle, so distance to the wanted point grows
+     with the angle you turn away from it, and the first hit is the nearest. */
+  function exactAttackTarget(a, desired) {
+    var gap = L.attackGap;
+    var theta = Math.atan2(desired.y - a.y, desired.x - a.x);
+    for (var k = 0; k < 1440; k++) {
+      var ang = theta + (k % 2 === 0 ? 1 : -1) * Math.floor((k + 1) / 2) * Math.PI / 720;
+      var c = { x: a.x + Math.cos(ang) * gap, y: a.y + Math.sin(ang) * gap };
+      if (inBounds(c)) return c;
     }
-    return best || out;
+    return { x: a.x, y: clamp(a.y + gap, L.minY, L.maxY) };
+  }
+
+  /* Net corner to the opposite rear corner. A rear player sliding along one of
+     these is making a diagonal, and the partner may cut straight to the T. */
+  var DIAGONALS = [
+    { start: { x: 0, y: NET }, end: { x: COURT.widthDoubles, y: COURT.length } },
+    { start: { x: COURT.widthDoubles, y: NET }, end: { x: 0, y: COURT.length } }
+  ];
+  function diagonalProgress(pos, path) {
+    var vx = path.end.x - path.start.x, vy = path.end.y - path.start.y;
+    return ((pos.x - path.start.x) * vx + (pos.y - path.start.y) * vy) / (vx * vx + vy * vy);
+  }
+  function diagonalRearMotion(from, to) {
+    var dx = to.x - from.x, dy = to.y - from.y;
+    if (dy < L.diagDy || Math.abs(dx) < L.diagDx) return false;
+    var path = dx > 0 ? DIAGONALS[0] : DIAGONALS[1];
+    return diagonalProgress(to, path) > diagonalProgress(from, path) + L.diagStep;
   }
 
   function follow(team, i) {
@@ -158,8 +184,7 @@
       b = { x: CX, y: a.y > L.midY ? L.frontY : L.rearY };
       msg = team.names[i] + ' 중앙 → ' + team.names[j] + ' 전후 커버';
     }
-    if (!deep) b = holdGap(a, b);
-    t[j] = b;
+    t[j] = exactAttackTarget(a, b);   // v19 applies this to the rear case too
     limitTargets(team);
     say(msg + ' · 중심 간격 ' + L.attackGap.toFixed(2) + 'm');
   }
@@ -292,13 +317,15 @@
 
   /* ---------- easing ---------- */
 
-  var raf = 0, held = null;
+  var raf = 0, held = null, waiting = null;
   function tick() {
     var moving = false;
     teams.forEach(function (team) {
       limitTargets(team);
       team.p.forEach(function (v, i) {
         if (held && held.team === team && held.i === i) return;
+        // The partner holds still until the finger lifts.
+        if (waiting && waiting.team === team && waiting.i === i) return;
         var dx = team.t[i].x - v.x, dy = team.t[i].y - v.y;
         if (Math.abs(dx) + Math.abs(dy) > 0.01) {
           v.x += dx * 0.17; v.y += dy * 0.17; moving = true;
@@ -365,12 +392,40 @@
     return { team: team, i: i, j: 1 - i, side: other.x < CX ? 'left' : 'right' };
   }
 
+  /* Armed when a mid-rear player near the centre is picked up while the
+     partner already holds a wide front position. */
+  function armDiagonal(team, i) {
+    if (!team.linked) return null;
+    var me = team.p[i], other = team.p[1 - i];
+    var midRear = me.y >= L.diagRearMin && me.y <= L.diagRearMax &&
+      Math.abs(me.x - CX) < L.diagCentre;
+    var partnerWide = other.y < L.diagPartnerY &&
+      (other.x <= L.splitL || other.x >= L.splitR);
+    return (midRear && partnerWide) ? { from: { x: me.x, y: me.y } } : null;
+  }
+
   function movePlayer(q) {
     var team = active.team, i = active.i;
     var next = {
       x: clamp(q.x + active.off.x, L.xMin, L.xMax),
       y: clamp(localY(team, q.y + active.off.y), L.minY, L.maxY)
     };
+
+    // Sliding the centre-rear player out to a rear corner: the partner cuts
+    // straight to the T instead of staging through the defensive spot.
+    if (active.diag) {
+      var rearward = next.y >= active.diag.from.y + L.diagDy && next.y >= L.diagMinY;
+      if (active.diagApplied || (diagonalRearMotion(active.diag.from, next) && rearward)) {
+        active.diagApplied = true;
+        team.formation = 'attack'; team.sideSign = 0;
+        team.p[i] = { x: next.x, y: next.y };
+        team.t[i] = { x: next.x, y: next.y };
+        team.t[1 - i] = exactAttackTarget(next, { x: CX, y: L.frontY });
+        say(team.names[i] + ' 후위 대각 이동 → ' + team.names[1 - i] +
+            ' T 중앙으로 직선 대각 (수비 경유 없음)');
+        return;
+      }
+    }
 
     // While walking the rear swap across the court, leave the partner alone.
     if (active.rearSwap && next.y >= L.rearTrigger) {
@@ -435,9 +490,12 @@
         off: { x: team.p[i].x - q.x, y: modelY(team, team.p[i].y) - q.y },
         // Only a rear player may claim a front corner, per the prototype.
         frontSwap: team.p[i].y >= SHORT ? cornerSwap(team, i, [L.minY, SHORT]) : null,
-        rearSwap: cornerSwap(team, i, [L.rearTrigger, L.maxY])
+        rearSwap: cornerSwap(team, i, [L.rearTrigger, L.maxY]),
+        diag: armDiagonal(team, i),
+        diagApplied: false
       };
       held = { team: team, i: i };
+      waiting = { team: team, i: 1 - i };
       return;
     }
     if (grab) { active = { kind: 'shuttle', id: e.pointerId }; return; }
@@ -490,7 +548,7 @@
     var team = swap.team, a = team.p[swap.i];
     var opposite = swap.side === 'left' ? a.x >= L.cornerR : a.x <= L.cornerL;
     if (a.y >= band[0] && a.y <= band[1] && opposite) {
-      team.t[swap.j] = { x: target.x, y: target.y };
+      team.t[swap.j] = exactAttackTarget(a, target);
       team.formation = 'attack'; team.sideSign = 0;
       say((team.flip ? '상대 팀 ' : '우리 팀 ') + team.names[swap.i] + ' ' + label +
           ' → ' + team.names[swap.j] + ' 역할 교대 · 간격 제한 해제');
@@ -501,7 +559,7 @@
 
   function onUp(e) {
     if (!active || active.id !== e.pointerId) return;
-    if (active.kind === 'player' && active.started) {
+    if (active.kind === 'player' && active.started && !active.diagApplied) {
       var done = false;
       if (active.frontSwap) {
         done = settleSwap(active.frontSwap, [L.minY, SHORT], { x: CX, y: L.frontY }, '전위 진입');
@@ -515,6 +573,7 @@
     }
     active = null;
     held = null;
+    waiting = null;
     update();
   }
 

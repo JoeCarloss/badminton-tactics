@@ -1,5 +1,5 @@
 /* Offline app shell. Bump CACHE whenever an asset below changes. */
-var CACHE = 'bts-v2.3.0';
+var CACHE = 'bts-v2.4.0';
 var ASSETS = [
   './',
   'index.html',
