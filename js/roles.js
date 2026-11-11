@@ -81,7 +81,7 @@
   var teams = [makeTeam(['A1', 'A2'], false), makeTeam(['C', 'D'], true)];
   var shuttle = { x: CX, y: NET };
   var ink = [];
-  var tool = 'move', inkColor = '#ffdc00', coneR = 3.5;
+  var tool = 'move', inkColor = '#ffdc00', coneR = 3.5, coneDeg = 140;
 
   function modelY(team, y) { return team.flip ? COURT.length - y : y; }
   function localY(team, y) { return team.flip ? COURT.length - y : y; }
@@ -233,7 +233,7 @@
   }
 
   function drawCones() {
-    var W = COURT.widthDoubles, half = 70 * Math.PI / 180;   // 140° total
+    var W = COURT.widthDoubles, half = coneDeg / 2 * Math.PI / 180;
     teams.forEach(function (team, ti) {
       if (!team.coneOn || team.coneAlpha <= 0) return;
       if (team.formation === 'side' || isSide(team)) return;
@@ -649,6 +649,8 @@
       b.classList.toggle('active', b.dataset.ink === inkColor);
     });
     $('coneRVal').textContent = coneR.toFixed(1) + 'm';
+    $('coneDegVal').textContent = coneDeg + '°';
+    $('coneDeg').value = coneDeg;
     ['AB', 'CD'].forEach(function (id, ti) {
       var team = teams[ti];
       var link = $('link' + id);
@@ -657,7 +659,7 @@
       [0, 1].forEach(function (i) {
         var b = $('cone' + id + i);
         b.classList.toggle('active', team.cone[i]);
-        b.textContent = team.names[i] + ' 140°' + (team.cone[i] ? ' ✓' : ' ✕');
+        b.textContent = team.names[i] + ' ' + coneDeg + '°' + (team.cone[i] ? ' ✓' : ' ✕');
       });
       var mz = $('zone' + id);
       mz.classList.toggle('active', team.zoneOn);
@@ -714,6 +716,7 @@
       b.onclick = function () { inkColor = b.dataset.ink; tool = 'pen'; syncUI(); };
     });
     $('coneR').oninput = function (e) { coneR = +e.target.value / 10; syncUI(); update(); };
+    $('coneDeg').oninput = function (e) { coneDeg = +e.target.value; syncUI(); update(); };
 
     ['AB', 'CD'].forEach(function (id, ti) {
       var team = teams[ti];
@@ -777,6 +780,8 @@
     shuttle: function () { return shuttle; },
     view: function () { return view; },
     setTool: function (t) { tool = t; syncUI(); },
+    cone: function () { return { deg: coneDeg, r: coneR }; },
+    setCone: function (deg, r) { if (deg) coneDeg = deg; if (r) coneR = r; syncUI(); update(); },
     isSide: isSide, layout: layout, reset: reset, follow: follow
   };
 })(window);
