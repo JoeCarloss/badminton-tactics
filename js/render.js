@@ -286,4 +286,9 @@
   }
 
   BTS.render = render;
+  // Shared with the role-based board in js/roles.js.
+  BTS.render.court = drawCourt;
+  BTS.render.labels = drawSideLabels;
+  BTS.render.stroke = drawStroke;
+  BTS.render.shuttle = drawShuttle;
 })(window);

@@ -276,6 +276,11 @@ canvas {
 
 /* Phones: shrink the controls so the panel needs a smaller band, and drop
    the parts that are decoration rather than control. */
+/* The trailing word in a slider label is decoration; the value is not. */
+@media (max-width: 480px), (max-height: 440px) {
+  .srow .long { display: none; }
+}
+
 @media (max-width: 600px), (max-height: 560px) {
   :root { --tap: 30px; --gap: 5px; }
   .topbar { gap: 6px; padding: 4px 8px; min-height: 36px; }
@@ -293,6 +298,17 @@ canvas {
   .framebar { padding: 4px 5px; gap: 4px; }
   .framebar button { font-size: 11px; padding: 4px 7px; }
   .speed input[type=range] { width: 56px; }
+}
+
+/* Must come after the 600/560 tier: same specificity, so order decides. */
+@media (max-height: 440px) {
+  :root { --tap: 26px; }
+  .statusbar { min-height: 26px; padding: 3px 8px; font-size: 11px; }
+  .ink { min-height: 24px; }
+  .panel { gap: 4px; padding: 4px; }
+  .group { gap: 2px; }
+  .grid2 { gap: 3px; }
+  .srow { gap: 4px; }
 }
 
 /* ---------- library sheet ---------- */
@@ -362,6 +378,71 @@ canvas {
 
 .sheet-foot { display: flex; align-items: center; gap: var(--gap); }
 .sheet-foot button { font-size: 12px; }
+
+/* ---------- status line (role board) ---------- */
+
+.statusbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 6px 10px;
+  min-height: 32px;
+  font-size: 12px;
+  color: #cfe3f5;
+  text-align: center;
+  line-height: 1.35;
+}
+
+.btnlink {
+  display: inline-flex;
+  align-items: center;
+  background: var(--btn);
+  border: 1px solid var(--btn-edge);
+  border-radius: var(--radius);
+  padding: 5px 11px;
+  font-size: 12px;
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
+
+/* Label and slider share a row: on a phone the stacked form cost about
+   18px each, and six of them pushed the panel past the screen. */
+.srow {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(46px, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+.srow label.slider {
+  justify-content: flex-start;
+  gap: 4px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.grid4 button { font-size: 10px; padding: 4px 2px; }
+
+.inks { display: flex; gap: 6px; }
+.ink {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 28px;
+  padding: 0;
+  background: var(--c);
+  border: 2px solid transparent;
+  border-radius: 7px;
+}
+.ink.active {
+  background: var(--c);
+  border-color: #fff;
+  box-shadow: 0 0 0 2px var(--accent);
+}
 
 /* ---------- toast ---------- */
 

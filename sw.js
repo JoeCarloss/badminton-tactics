@@ -1,14 +1,16 @@
 /* Offline app shell. Bump CACHE whenever an asset below changes. */
-var CACHE = 'bts-v2.2.1';
+var CACHE = 'bts-v2.3.0';
 var ASSETS = [
   './',
   'index.html',
+  'roles.html',
   'manifest.webmanifest',
   'css/app.css',
   'js/geometry.js',
   'js/state.js',
   'js/render.js',
   'js/ui.js',
+  'js/roles.js',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
