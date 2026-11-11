@@ -8,6 +8,9 @@ GREEN_IN   = (14, 118, 93, 255)    # court surface
 LINE       = (247, 255, 255, 255)
 CORK       = (245, 219, 140, 255)
 NET        = (217, 250, 255, 255)
+FRONT      = (85, 192, 255, 255)
+BACK       = (255, 198, 90, 255)
+WEDGE      = (120, 215, 255, 255)
 
 L, W = 13.40, 6.10          # court length / doubles width, metres
 SHORT, LONGS = 1.98, 0.76
@@ -35,7 +38,7 @@ def png(path, width, height, pixel):
         f.write(out)
 
 
-def make(path, size, maskable=False, square=False):
+def make(path, size, maskable=False, square=False, variant='main'):
     N = float(size)
     radius = 0.0 if (maskable or square) else 0.22 * N
     # Maskable icons must keep their content inside the 80% safe circle.
@@ -61,6 +64,26 @@ def make(path, size, maskable=False, square=False):
     net_y = my(L / 2)
     centre_x = mx(W / 2)
 
+    # Role variant: two players with a cover wedge, so the two installed
+    # apps do not share an icon.
+    front = (mx(W / 2), my(L / 2 + 2.3), 0.072 * N)
+    back = (mx(W / 2), my(L / 2 + 4.6), 0.072 * N)
+    wedge_r = 0.30 * N
+    half_ang = math.radians(70)
+
+    def in_wedge(px, py):
+        # Clipped to our own half and inside the court, as the app draws it.
+        if py < net_y or py > y_hi or px < x_lo or px > x_hi:
+            return False
+        dx, dy = px - front[0], py - front[1]
+        if math.hypot(dx, dy) > wedge_r:
+            return False
+        # facing the net, i.e. up the image
+        ang = math.atan2(dy, dx) - (-math.pi / 2)
+        while ang > math.pi: ang -= 2 * math.pi
+        while ang < -math.pi: ang += 2 * math.pi
+        return abs(ang) <= half_ang
+
     # Shuttle: cork ball plus a flaring skirt, sitting on the far half.
     sh_x, sh_y = mx(W / 2), my(L / 2 - 1.55)
     cork_r = 0.044 * N
@@ -83,16 +106,31 @@ def make(path, size, maskable=False, square=False):
             if dx > 0 and dy > 0 and math.hypot(dx, dy) > radius:
                 return BG_OUTSIDE
 
-        if math.hypot(px - sh_x, py - sh_y) <= cork_r:
-            return CORK
-        if in_skirt(px, py):
-            return LINE
+        if variant == 'roles':
+            if math.hypot(px - front[0], py - front[1]) <= front[2]:
+                return FRONT
+            if math.hypot(px - back[0], py - back[1]) <= back[2]:
+                return BACK
+        else:
+            if math.hypot(px - sh_x, py - sh_y) <= cork_r:
+                return CORK
+            if in_skirt(px, py):
+                return LINE
 
         on_court = x_lo <= px <= x_hi and y_lo <= py <= y_hi
 
         # Net first: it is the widest line and overhangs the sidelines.
         if abs(py - net_y) <= net_w / 2 and x_lo - 0.025 * N <= px <= x_hi + 0.025 * N:
             return NET
+        if variant == 'roles' and in_wedge(px, py):
+            base = GREEN_IN if on_court else GREEN_OUT
+            for yy in h_lines:
+                if abs(py - yy) <= lw / 2 and on_court:
+                    return LINE
+            for xx in v_lines:
+                if abs(px - xx) <= lw / 2 and on_court:
+                    return LINE
+            return tuple(round(b + (f - b) * 0.42) for b, f in zip(base, WEDGE))
         if on_court:
             for yy in h_lines:
                 if abs(py - yy) <= lw / 2:
@@ -117,3 +155,7 @@ make(os.path.join(icons, "icon-192.png"), 192)
 make(os.path.join(icons, "icon-512.png"), 512)
 make(os.path.join(icons, "icon-maskable-512.png"), 512, maskable=True)
 make(os.path.join(icons, "apple-touch-icon.png"), 180, square=True)  # iOS applies its own mask
+for name, sz, kw in [("roles-192.png", 192, {}), ("roles-512.png", 512, {}),
+                     ("roles-maskable-512.png", 512, {"maskable": True}),
+                     ("roles-apple-touch-icon.png", 180, {"square": True})]:
+    make(os.path.join(icons, name), sz, variant="roles", **kw)

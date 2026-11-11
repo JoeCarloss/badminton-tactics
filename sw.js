@@ -1,10 +1,11 @@
 /* Offline app shell. Bump CACHE whenever an asset below changes. */
-var CACHE = 'bts-v2.5.0';
+var CACHE = 'bts-v2.6.0';
 var ASSETS = [
   './',
   'index.html',
   'roles.html',
   'manifest.webmanifest',
+  'roles.webmanifest',
   'css/app.css',
   'js/geometry.js',
   'js/state.js',
@@ -14,7 +15,11 @@ var ASSETS = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/icon-maskable-512.png',
-  'icons/apple-touch-icon.png'
+  'icons/apple-touch-icon.png',
+  'icons/roles-192.png',
+  'icons/roles-512.png',
+  'icons/roles-maskable-512.png',
+  'icons/roles-apple-touch-icon.png'
 ];
 
 self.addEventListener('install', function (e) {
