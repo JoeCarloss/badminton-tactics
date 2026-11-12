@@ -248,6 +248,8 @@ canvas {
 .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
 .grid2 button { font-size: 11px; padding: 4px 3px; }
 .span2 { grid-column: 1 / -1; }
+/* A control the board is currently overriding. */
+button.dim { opacity: .45; }
 
 .swatches { display: flex; gap: 5px; }
 .swatch {

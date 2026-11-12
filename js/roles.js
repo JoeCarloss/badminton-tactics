@@ -43,6 +43,12 @@
     sideEntryX: [2.24, 3.86],
     sameRow: 1.61,
     splitL: 2.55, splitR: 3.56,
+    // Hiding the cones needs a tighter test than the model's isSide(). That
+    // threshold (1.61 m) was eyeballed on a court drawn 18% short, so on a
+    // true-proportion court it swallows ordinary front/back attacking shapes
+    // and the cones vanish while their buttons still read on.
+    hideDy: 0.50,          // a real side-by-side pair stands level
+    hideDx: 2.40,          // ... and about one defensive gap apart
     straightDrift: 0.24,   // sideways drag under this still counts as straight
     sameColumn: 0.51,      // pair this close in x counts as one column
     diagRearMin: 9.54,     // picking up a mid-rear player arms the diagonal
@@ -94,6 +100,14 @@
     return Math.abs(p[0].y - p[1].y) < L.sameRow &&
       ((p[0].x < L.splitL && p[1].x > L.splitR) ||
        (p[1].x < L.splitL && p[0].x > L.splitR));
+  }
+
+  // Display-only: is this pair actually standing side by side in defence?
+  function defensivePair(team) {
+    if (team.formation === 'side') return true;
+    var p = team.p;
+    return Math.abs(p[0].y - p[1].y) < L.hideDy &&
+           Math.abs(p[0].x - p[1].x) > L.hideDx;
   }
 
   function limitTargets(team) {
@@ -236,7 +250,7 @@
     var W = COURT.widthDoubles, half = coneDeg / 2 * Math.PI / 180;
     teams.forEach(function (team, ti) {
       if (!team.coneOn || team.coneAlpha <= 0) return;
-      if (team.formation === 'side' || isSide(team)) return;
+      if (defensivePair(team)) return;
       var facing = team.flip ? Math.PI / 2 : -Math.PI / 2;
       ctx.save();
       ctx.beginPath();
@@ -333,6 +347,7 @@
       });
     });
     draw();
+    refreshConeHints();
     raf = moving ? requestAnimationFrame(tick) : 0;
   }
   function update() { if (raf) cancelAnimationFrame(raf); raf = 0; tick(); }
@@ -641,6 +656,23 @@
 
   /* ---------- wiring ---------- */
 
+  var coneHintKey = null;
+
+  function refreshConeHints() {
+    var key = teams.map(function (t) { return defensivePair(t) ? 1 : 0; }).join('') + ':' + coneDeg;
+    if (key === coneHintKey) return;
+    coneHintKey = key;
+    ['AB', 'CD'].forEach(function (id, ti) {
+      var team = teams[ti], hidden = defensivePair(team);
+      [0, 1].forEach(function (i) {
+        var b = $('cone' + id + i);
+        b.classList.toggle('dim', hidden);
+        b.textContent = team.names[i] + ' ' + coneDeg + '°' +
+          (hidden ? ' (수비)' : (team.cone[i] ? ' ✓' : ' ✕'));
+      });
+    });
+  }
+
   function syncUI() {
     ['move', 'pen', 'erase'].forEach(function (t) {
       $('tool-' + t).classList.toggle('active', tool === t);
@@ -657,9 +689,7 @@
       link.classList.toggle('active', team.linked);
       link.textContent = team.names.join('·') + (team.linked ? ' 연결 ✓' : ' 해제');
       [0, 1].forEach(function (i) {
-        var b = $('cone' + id + i);
-        b.classList.toggle('active', team.cone[i]);
-        b.textContent = team.names[i] + ' ' + coneDeg + '°' + (team.cone[i] ? ' ✓' : ' ✕');
+        $('cone' + id + i).classList.toggle('active', team.cone[i]);
       });
       var mz = $('zone' + id);
       mz.classList.toggle('active', team.zoneOn);
@@ -669,6 +699,8 @@
       $('zoneA' + id).value = team.zoneAlpha;
       $('zoneV' + id).textContent = team.zoneAlpha + '%';
     });
+    coneHintKey = null;        // force the labels to be rewritten
+    refreshConeHints();
   }
 
   function reset() {
@@ -782,6 +814,7 @@
     setTool: function (t) { tool = t; syncUI(); },
     cone: function () { return { deg: coneDeg, r: coneR }; },
     setCone: function (deg, r) { if (deg) coneDeg = deg; if (r) coneR = r; syncUI(); update(); },
-    isSide: isSide, layout: layout, reset: reset, follow: follow
+    isSide: isSide, defensivePair: defensivePair,
+    layout: layout, reset: reset, follow: follow
   };
 })(window);
