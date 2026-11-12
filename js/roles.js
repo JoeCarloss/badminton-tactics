@@ -88,6 +88,7 @@
   var shuttle = { x: CX, y: NET };
   var ink = [];
   var tool = 'move', inkColor = '#ffdc00', coneR = 3.5, coneDeg = 140;
+  var hideInDefence = true;   // faithful to the prototype; switchable
 
   function modelY(team, y) { return team.flip ? COURT.length - y : y; }
   function localY(team, y) { return team.flip ? COURT.length - y : y; }
@@ -104,6 +105,7 @@
 
   // Display-only: is this pair actually standing side by side in defence?
   function defensivePair(team) {
+    if (!hideInDefence) return false;
     if (team.formation === 'side') return true;
     var p = team.p;
     return Math.abs(p[0].y - p[1].y) < L.hideDy &&
@@ -205,7 +207,12 @@
 
   /* ---------- drawing ---------- */
 
-  var canvas, ctx, stage, app, panel, view, zoneBuf = null;
+  var canvas, ctx, stage, app, panel, view;
+  // One buffer per team. Sharing a single offscreen canvas for both draws made
+  // Safari paint our half with the opponent's pixels: WebKit can defer a
+  // canvas-to-canvas drawImage, and by the time it resolved, the shared buffer
+  // had already been overwritten by the second team.
+  var zoneBufs = [null, null];
 
   function drawZones() {
     var W = COURT.widthDoubles, cell = 0.14;
@@ -214,11 +221,12 @@
       var y0 = ti === 0 ? NET + 0.06 : 0;
       var h = (ti === 0 ? COURT.length : NET - 0.06) - y0;
       var cols = Math.ceil(W / cell), rows = Math.ceil(h / cell);
-      if (!zoneBuf || zoneBuf.width !== cols || zoneBuf.height !== rows) {
-        zoneBuf = document.createElement('canvas');
-        zoneBuf.width = cols; zoneBuf.height = rows;
+      var buf = zoneBufs[ti];
+      if (!buf || buf.width !== cols || buf.height !== rows) {
+        buf = zoneBufs[ti] = document.createElement('canvas');
+        buf.width = cols; buf.height = rows;
       }
-      var bctx = zoneBuf.getContext('2d');
+      var bctx = buf.getContext('2d');
       var img = bctx.createImageData(cols, rows), d = img.data;
       var a0 = { x: team.p[0].x, y: modelY(team, team.p[0].y) };
       var a1 = { x: team.p[1].x, y: modelY(team, team.p[1].y) };
@@ -241,7 +249,7 @@
       ctx.save();
       ctx.imageSmoothingEnabled = true;
       ctx.beginPath(); ctx.rect(0, y0, W, h); ctx.clip();
-      ctx.drawImage(zoneBuf, 0, y0, W, h);
+      ctx.drawImage(buf, 0, y0, W, h);
       ctx.restore();
     });
   }
@@ -659,7 +667,8 @@
   var coneHintKey = null;
 
   function refreshConeHints() {
-    var key = teams.map(function (t) { return defensivePair(t) ? 1 : 0; }).join('') + ':' + coneDeg;
+    var key = teams.map(function (t) { return defensivePair(t) ? 1 : 0; }).join('') +
+      ':' + coneDeg + ':' + hideInDefence;
     if (key === coneHintKey) return;
     coneHintKey = key;
     ['AB', 'CD'].forEach(function (id, ti) {
@@ -682,6 +691,8 @@
     });
     $('coneRVal').textContent = coneR.toFixed(1) + 'm';
     $('coneDegVal').textContent = coneDeg + '°';
+    $('hideInDefence').classList.toggle('active', hideInDefence);
+    $('hideInDefence').textContent = '수비 숨김 ' + (hideInDefence ? '✓' : '✕');
     $('coneDeg').value = coneDeg;
     ['AB', 'CD'].forEach(function (id, ti) {
       var team = teams[ti];
@@ -749,6 +760,9 @@
     });
     $('coneR').oninput = function (e) { coneR = +e.target.value / 10; syncUI(); update(); };
     $('coneDeg').oninput = function (e) { coneDeg = +e.target.value; syncUI(); update(); };
+    $('hideInDefence').onclick = function () {
+      hideInDefence = !hideInDefence; syncUI(); update();
+    };
 
     ['AB', 'CD'].forEach(function (id, ti) {
       var team = teams[ti];
@@ -804,8 +818,15 @@
     layout();
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  function boot() {
+    try { init(); }
+    catch (e) {
+      if (global.BTSERR) global.BTSERR('INIT 실패', e && (e.stack || e.message) || e);
+      throw e;
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 
   BTS.roles = {
     teams: teams, L: L, ink: ink,

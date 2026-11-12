@@ -388,6 +388,7 @@ button.dim { opacity: .45; }
   display: flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   background: var(--surface);
   border-radius: 12px;
   padding: 6px 10px;
@@ -396,6 +397,13 @@ button.dim { opacity: .45; }
   color: #cfe3f5;
   text-align: center;
   line-height: 1.35;
+}
+
+.ver {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: #6f86a0;
+  font-variant-numeric: tabular-nums;
 }
 
 .btnlink {
@@ -411,6 +419,8 @@ button.dim { opacity: .45; }
   white-space: nowrap;
 }
 
+.grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+.grid3 button { font-size: 10px; padding: 4px 2px; }
 .grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; }
 
 /* Label and slider share a row: on a phone the stacked form cost about

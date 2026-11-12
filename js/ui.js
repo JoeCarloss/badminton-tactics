@@ -672,8 +672,15 @@
     layout();
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
-  else init();
+  function boot() {
+    try { init(); }
+    catch (e) {
+      if (global.BTSERR) global.BTSERR('INIT 실패', e && (e.stack || e.message) || e);
+      throw e;
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
 
   BTS.ui = { toast: toast, draw: draw, layout: layout };
 })(window);

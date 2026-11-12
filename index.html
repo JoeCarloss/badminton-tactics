@@ -142,6 +142,40 @@
 
 <div id="toast" class="toast" hidden></div>
 
+<script>
+/* Surfaces script errors on the page itself: Safari-only failures are
+   otherwise invisible on a tablet with no console. */
+(function () {
+  var box = null;
+  function show(kind, msg, src, line, col) {
+    if (!box) {
+      box = document.createElement('pre');
+      box.id = 'errbox';
+      box.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:9999;margin:0;' +
+        'max-height:45vh;overflow:auto;background:#5a1020;color:#ffe3e8;' +
+        'font:11px/1.45 ui-monospace,Menlo,monospace;padding:8px 10px;white-space:pre-wrap;' +
+        'border-top:2px solid #ff5f7a';
+      var close = document.createElement('button');
+      close.textContent = '닫기';
+      close.style.cssText = 'float:right;background:#8a1b33;color:#fff;border:0;' +
+        'border-radius:6px;padding:3px 9px;font:inherit';
+      close.onclick = function () { box.remove(); box = null; };
+      box.appendChild(close);
+      (document.body || document.documentElement).appendChild(box);
+    }
+    var at = src ? (' @ ' + String(src).split('/').pop() + ':' + line + ':' + col) : '';
+    box.appendChild(document.createTextNode(kind + ': ' + msg + at + '\n'));
+  }
+  window.addEventListener('error', function (e) {
+    show('ERROR', e.message || e.type, e.filename, e.lineno, e.colno);
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e.reason;
+    show('PROMISE', (r && (r.message || r)) || 'unknown');
+  });
+  window.BTSERR = show;
+})();
+</script>
 <script src="js/geometry.js"></script>
 <script src="js/state.js"></script>
 <script src="js/render.js"></script>
