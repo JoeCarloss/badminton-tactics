@@ -300,6 +300,8 @@ button.dim { opacity: .45; }
   .framebar { padding: 4px 5px; gap: 4px; }
   .framebar button { font-size: 11px; padding: 4px 7px; }
   .speed input[type=range] { width: 56px; }
+  /* A three-up row of Korean labels needs the width more than the icons. */
+  .grid3 .ico { display: none; }
 }
 
 /* Must come after the 600/560 tier: same specificity, so order decides. */
